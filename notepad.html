@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نوتباد محترف - Professional Notepad</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: #2c3e50;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .toolbar-left, .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-language {
+            background: #9b59b6;
+        }
+
+        .btn-language:hover {
+            background: #8e44ad;
+        }
+
+        .editor-container {
+            position: relative;
+            height: 70vh;
+        }
+
+        #notepad {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 25px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            background: #f8f9fa;
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            color: #2c3e50;
+            transition: all 0.3s ease;
+        }
+
+        /* أنماط اللغة العربية */
+        body[data-language="ar"] #notepad {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Tahoma', 'Arial', sans-serif;
+        }
+
+        /* أنماط اللغة الإنجليزية */
+        body[data-language="en"] #notepad {
+            direction: ltr;
+            text-align: left;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+        }
+
+        body[data-language="en"] {
+            direction: ltr;
+        }
+
+        body[data-language="en"] .container {
+            text-align: left;
+        }
+
+        .status-bar {
+            background: #34495e;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* تحسينات القوائم المنسدلة */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            position: absolute;
+            background: white;
+            min-width: 220px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-radius: 10px;
+            z-index: 1000;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            border: 1px solid #e1e8ed;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        body[data-language="en"] .dropdown-content {
+            right: auto;
+            left: 0;
+        }
+
+        .dropdown.active .dropdown-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.1), transparent);
+            transition: right 0.5s ease;
+        }
+
+        .dropdown-item:hover::before {
+            right: 100%;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            transform: translateX(-5px);
+            border-radius: 6px;
+            margin: 2px 8px;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        body[data-language="en"] .dropdown-item:hover {
+            transform: translateX(5px);
+        }
+
+        .text-options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        select, input[type="color"] {
+            padding: 6px 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            background: white;
+            color: #2c3e50;
+            transition: all 0.3s ease;
+        }
+
+        .tabs {
+            display: flex;
+            background: #34495e;
+            padding: 0 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: #2c3e50;
+            color: white;
+            cursor: pointer;
+            border-right: 1px solid #34495e;
+            transition: all 0.3s ease;
+        }
+
+        body[data-language="en"] .tab {
+            border-right: none;
+            border-left: 1px solid #34495e;
+        }
+
+        .tab.active {
+            background: #3498db;
+        }
+
+        .tab:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #27ae60;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 10000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        body[data-language="en"] .modal-buttons {
+            justify-content: flex-start;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-right: 15px;
+        }
+
+        body[data-language="en"] .action-buttons {
+            margin-right: 0;
+            margin-left: 15px;
+        }
+
+        .action-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+
+        .language-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .language-flag {
+            font-size: 18px;
+        }
+
+        /* تحسينات للشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .toolbar-left, .toolbar-right {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .action-buttons {
+                margin-right: 0;
+                justify-content: center;
+                width: 100%;
+            }
+
+            body[data-language="en"] .action-buttons {
+                margin-left: 0;
+            }
+
+            .dropdown-content {
+                position: fixed;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) scale(0.9) !important;
+                width: 90vw;
+                max-width: 300px;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .dropdown.active .dropdown-content {
+                transform: translate(-50%, -50%) scale(1) !important;
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* تأثيرات النص */
+        .typing-effect {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* تأثير التبديل بين اللغات */
+        .language-transition {
+            transition: all 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body data-language="ar">
+    <div class="notification" id="notification"></div>
+
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <h3 class="typing-effect" id="aboutTitle">💡 حول النوتباد</h3>
+            <p id="aboutVersion">نوتباد محترف - إصدار 2.4</p>
+            <p id="aboutDev">تم التطوير بواسطة فريق البرمجة</p>
+            <p id="aboutFeatures">المميزات: حفظ، فتح، تصدير، استيراد، وتنسيق النص</p>
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal('aboutModal')" id="closeAbout">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="fontSettingsModal">
+        <div class="modal-content">
+            <h3 class="typing-effect" id="fontSettingsTitle">🎨 إعدادات الخط</h3>
+            <div class="form-group">
+                <label for="modalFontFamily" id="fontFamilyLabel">نوع الخط:</label>
+                <select id="modalFontFamily">
+                    <option value="Tahoma, Arial, sans-serif">Tahoma</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Segoe UI</option>
+                    <option value="'Courier New', Courier, monospace">Courier New</option>
+                    <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="modalFontSize" id="fontSizeLabel">حجم الخط:</label>
+                <select id="modalFontSize">
+                    <option value="12px">12</option>
+                    <option value="14px">14</option>
+                    <option value="16px" selected>16</option>
+                    <option value="18px">18</option>
+                    <option value="20px">20</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-success" onclick="applyFontSettings()" id="applyFontSettings">تطبيق</button>
+                <button class="btn" onclick="closeModal('fontSettingsModal')" id="cancelFontSettings">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container fade-in">
+        <div class="tabs">
+            <div class="tab active" id="document1Tab">📄 مستند 1</div>
+            <div class="tab" onclick="newDocument()" id="newTab">➕ جديد</div>
+        </div>
+
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="action-buttons">
+                    <button class="action-btn delete" onclick="deleteSelectedText()" id="deleteBtn">
+                        ✂️ حذف
+                    </button>
+                    <button class="action-btn clear" onclick="clearText()" id="clearBtn">
+                        🗑️ مسح الكل
+                    </button>
+                </div>
+
+                <div class="dropdown" id="fileDropdown">
+                    <button class="btn" id="fileMenu">📁 ملف</button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item" onclick="newDocument()" id="newDocumentItem">
+                            📄 جديد (Ctrl+N)
+                        </div>
+                        <div class="dropdown-item" onclick="openFile()" id="openFileItem">
+                            📂 فتح (Ctrl+O)
+                        </div>
+                        <div class="dropdown-item" onclick="saveFile()" id="saveFileItem">
+                            💾 حفظ (Ctrl+S)
+                        </div>
+                        <div class="dropdown-item" onclick="saveAsTxt()" id="saveAsTxtItem">
+                            📝 حفظ كنص
+                        </div>
+                        <div class="dropdown-item" onclick="printDocument()" id="printDocumentItem">
+                            🖨️ طباعة (Ctrl+P)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dropdown" id="editDropdown">
+                    <button class="btn" id="editMenu">✏️ تحرير</button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item" onclick="undoAction()" id="undoItem">
+                            ↩️ تراجع (Ctrl+Z)
+                        </div>
+                        <div class="dropdown-item" onclick="redoAction()" id="redoItem">
+                            ↪️ إعادة (Ctrl+Y)
+                        </div>
+                        <div class="dropdown-item" onclick="cutText()" id="cutItem">
+                            ✂️ قص (Ctrl+X)
+                        </div>
+                        <div class="dropdown-item" onclick="copyText()" id="copyItem">
+                            📋 نسخ (Ctrl+C)
+                        </div>
+                        <div class="dropdown-item" onclick="pasteText()" id="pasteItem">
+                            📌 لصق (Ctrl+V)
+                        </div>
+                        <div class="dropdown-item" onclick="selectAll()" id="selectAllItem">
+                            🔍 تحديد الكل (Ctrl+A)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dropdown" id="formatDropdown">
+                    <button class="btn" id="formatMenu">🎨 تنسيق</button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item" onclick="formatText('bold')" id="boldItem">
+                            <strong>B</strong> عريض (Ctrl+B)
+                        </div>
+                        <div class="dropdown-item" onclick="formatText('italic')" id="italicItem">
+                            <em>I</em> مائل (Ctrl+I)
+                        </div>
+                        <div class="dropdown-item" onclick="formatText('underline')" id="underlineItem">
+                            <u>U</u> تحته خط (Ctrl+U)
+                        </div>
+                        <div class="dropdown-item" onclick="showModal('fontSettingsModal')" id="fontSettingsItem">
+                            🎨 إعدادات الخط
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-options">
+                    <div class="option-group">
+                        <select id="fontFamily" onchange="changeFont()">
+                            <option value="Tahoma, Arial, sans-serif">Tahoma</option>
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Segoe UI</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <select id="fontSize" onchange="changeFontSize()">
+                            <option value="12px">12</option>
+                            <option value="14px">14</option>
+                            <option value="16px" selected>16</option>
+                            <option value="18px">18</option>
+                            <option value="20px">20</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar-right">
+                <div class="language-switcher">
+                    <span class="language-flag" id="languageFlag">🇸🇦</span>
+                    <button class="btn btn-language" onclick="toggleLanguage()" id="languageBtn">
+                        العربية
+                    </button>
+                </div>
+                <button class="btn btn-success" onclick="saveFile()" id="saveBtn">
+                    💾 حفظ
+                </button>
+                <button class="btn btn-warning" onclick="openFile()" id="openBtn">
+                    📂 فتح
+                </button>
+                <button class="btn" onclick="showModal('aboutModal')" id="aboutBtn">
+                    💡 حول
+                </button>
+            </div>
+        </div>
+
+        <div class="editor-container">
+            <textarea id="notepad" placeholder="ابدأ الكتابة هنا..."></textarea>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span id="statusLabel">📝 الحالة:</span>
+                <span id="status">جاهز</span>
+            </div>
+            <div class="status-item">
+                <span id="charsLabel">🔤 الأحرف:</span>
+                <span id="charCount">0</span>
+            </div>
+            <div class="status-item">
+                <span id="wordsLabel">📖 الكلمات:</span>
+                <span id="wordCount">0</span>
+            </div>
+            <div class="status-item">
+                <span id="linesLabel">⏱️ الأسطر:</span>
+                <span id="lineCount">1</span>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".txt,.html,.js,.css,.json,.md" style="display: none;">
+    <a id="downloadLink" style="display: none;"></a>
+
+    <script>
+        // العناصر الرئيسية
+        const notepad = document.getElementById('notepad');
+        const fileInput = document.getElementById('fileInput');
+        const downloadLink = document.getElementById('downloadLink');
+        const notification = document.getElementById('notification');
+
+        // حالة التطبيق
+        let currentFile = null;
+        let isModified = false;
+        let history = [];
+        let historyIndex = -1;
+        let activeDropdown = null;
+        let currentLanguage = 'ar'; // 'ar' أو 'en'
+
+        // نصوص الواجهة باللغتين
+        const translations = {
+            ar: {
+                // أزرار الشريط
+                fileMenu: "📁 ملف",
+                editMenu: "✏️ تحرير", 
+                formatMenu: "🎨 تنسيق",
+                saveBtn: "💾 حفظ",
+                openBtn: "📂 فتح",
+                aboutBtn: "💡 حول",
+                languageBtn: "العربية",
+                deleteBtn: "✂️ حذف",
+                clearBtn: "🗑️ مسح الكل",
+                
+                // قائمة ملف
+                newDocument: "📄 جديد (Ctrl+N)",
+                openFile: "📂 فتح (Ctrl+O)", 
+                saveFile: "💾 حفظ (Ctrl+S)",
+                saveAsTxt: "📝 حفظ كنص",
+                printDocument: "🖨️ طباعة (Ctrl+P)",
+                
+                // قائمة تحرير
+                undo: "↩️ تراجع (Ctrl+Z)",
+                redo: "↪️ إعادة (Ctrl+Y)",
+                cut: "✂️ قص (Ctrl+X)",
+                copy: "📋 نسخ (Ctrl+C)", 
+                paste: "📌 لصق (Ctrl+V)",
+                selectAll: "🔍 تحديد الكل (Ctrl+A)",
+                
+                // قائمة تنسيق
+                bold: "عريض (Ctrl+B)",
+                italic: "مائل (Ctrl+I)",
+                underline: "تحته خط (Ctrl+U)",
+                fontSettings: "🎨 إعدادات الخط",
+                
+                // النوافذ
+                aboutTitle: "💡 حول النوتباد",
+                aboutVersion: "نوتباد محترف - إصدار 2.4",
+                aboutDev: "تم التطوير بواسطة فريق البرمجة", 
+                aboutFeatures: "المميزات: حفظ، فتح، تصدير، استيراد، وتنسيق النص",
+                closeAbout: "إغلاق",
+                
+                fontSettingsTitle: "🎨 إعدادات الخط",
+                fontFamilyLabel: "نوع الخط:",
+                fontSizeLabel: "حجم الخط:",
+                applyFontSettings: "تطبيق",
+                cancelFontSettings: "إلغاء",
+                
+                // شريط الحالة
+                statusLabel: "📝 الحالة:",
+                charsLabel: "🔤 الأحرف:",
+                wordsLabel: "📖 الكلمات:", 
+                linesLabel: "⏱️ الأسطر:",
+                statusReady: "جاهز",
+                statusModified: "تم التعديل",
+                
+                // علامات التبويب
+                document1Tab: "📄 مستند 1",
+                newTab: "➕ جديد",
+                
+                // الإشعارات
+                newDocCreated: "تم إنشاء مستند جديد",
+                fileOpened: "تم فتح الملف: ",
+                fileSaved: "تم حفظ الملف بنجاح",
+                noContent: "لا يوجد محتوى للحفظ",
+                noTextSelected: "لم يتم تحديد نص",
+                textDeleted: "تم حذف النص المحدد",
+                textCut: "تم قص النص",
+                textCopied: "تم نسخ النص", 
+                textPasted: "تم لصق النص",
+                allSelected: "تم تحديد كل النص",
+                allCleared: "تم مسح كل النص",
+                noTextToClear: "لا يوجد نص للمسح",
+                formatApplied: "تم تطبيق التنسيق: ",
+                fontSettingsApplied: "تم تطبيق إعدادات الخط",
+                undoDone: "تم التراجع",
+                redoDone: "تم الإعادة",
+                
+                // نصوص أخرى
+                placeholder: "ابدأ الكتابة هنا...",
+                confirmNew: "هل تريد إنشاء مستند جديد؟",
+                confirmClear: "هل تريد مسح كل النص؟"
+            },
+            en: {
+                // Toolbar buttons
+                fileMenu: "📁 File",
+                editMenu: "✏️ Edit",
+                formatMenu: "🎨 Format", 
+                saveBtn: "💾 Save",
+                openBtn: "📂 Open",
+                aboutBtn: "💡 About",
+                languageBtn: "English",
+                deleteBtn: "✂️ Delete",
+                clearBtn: "🗑️ Clear All",
+                
+                // File menu
+                newDocument: "📄 New (Ctrl+N)",
+                openFile: "📂 Open (Ctrl+O)",
+                saveFile: "💾 Save (Ctrl+S)", 
+                saveAsTxt: "📝 Save as Text",
+                printDocument: "🖨️ Print (Ctrl+P)",
+                
+                // Edit menu
+                undo: "↩️ Undo (Ctrl+Z)",
+                redo: "↪️ Redo (Ctrl+Y)",
+                cut: "✂️ Cut (Ctrl+X)",
+                copy: "📋 Copy (Ctrl+C)",
+                paste: "📌 Paste (Ctrl+V)", 
+                selectAll: "🔍 Select All (Ctrl+A)",
+                
+                // Format menu
+                bold: "Bold (Ctrl+B)",
+                italic: "Italic (Ctrl+I)",
+                underline: "Underline (Ctrl+U)",
+                fontSettings: "🎨 Font Settings",
+                
+                // Modals
+                aboutTitle: "💡 About Notepad",
+                aboutVersion: "Professional Notepad - Version 2.4",
+                aboutDev: "Developed by Programming Team",
+                aboutFeatures: "Features: Save, Open, Export, Import, and Text Formatting",
+                closeAbout: "Close",
+                
+                fontSettingsTitle: "🎨 Font Settings",
+                fontFamilyLabel: "Font Family:",
+                fontSizeLabel: "Font Size:",
+                applyFontSettings: "Apply",
+                cancelFontSettings: "Cancel",
+                
+                // Status bar
+                statusLabel: "📝 Status:",
+                charsLabel: "🔤 Characters:",
+                wordsLabel: "📖 Words:",
+                linesLabel: "⏱️ Lines:",
+                statusReady: "Ready",
+                statusModified: "Modified",
+                
+                // Tabs
+                document1Tab: "📄 Document 1",
+                newTab: "➕ New",
+                
+                // Notifications
+                newDocCreated: "New document created",
+                fileOpened: "File opened: ",
+                fileSaved: "File saved successfully",
+                noContent: "No content to save",
+                noTextSelected: "No text selected",
+                textDeleted: "Selected text deleted",
+                textCut: "Text cut",
+                textCopied: "Text copied",
+                textPasted: "Text pasted",
+                allSelected: "All text selected",
+                allCleared: "All text cleared",
+                noTextToClear: "No text to clear",
+                formatApplied: "Format applied: ",
+                fontSettingsApplied: "Font settings applied",
+                undoDone: "Undo completed",
+                redoDone: "Redo completed",
+                
+                // Other texts
+                placeholder: "Start typing here...",
+                confirmNew: "Do you want to create a new document?",
+                confirmClear: "Do you want to clear all text?"
+            }
+        };
+
+        // تهيئة التطبيق
+        function init() {
+            loadLanguageSetting();
+            loadFromStorage();
+            setupEventListeners();
+            updateStats();
+            updateUI();
+            
+            if (!localStorage.getItem('notepad-content')) {
+                notepad.value = currentLanguage === 'ar' ? 
+                    "مرحباً بك في النوتباد المحترف!\n\nاستمتع بالكتابة..." :
+                    "Welcome to Professional Notepad!\n\nEnjoy writing...";
+                saveToHistory();
+            }
+        }
+
+        // تبديل اللغة
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+            document.body.setAttribute('data-language', currentLanguage);
+            document.body.classList.add('language-transition');
+            
+            // تحديث العلم
+            const flag = document.getElementById('languageFlag');
+            flag.textContent = currentLanguage === 'ar' ? '🇸🇦' : '🇺🇸';
+            
+            // حفظ الإعداد
+            localStorage.setItem('notepad-language', currentLanguage);
+            
+            // تحديث الواجهة
+            updateUI();
+            
+            // تحديث النص التوضيحي
+            notepad.placeholder = translations[currentLanguage].placeholder;
+            
+            showNotification(currentLanguage === 'ar' ? 
+                'تم التبديل إلى اللغة العربية' : 
+                'Switched to English language');
+            
+            // إزالة تأثير الانتقال بعد الانتهاء
+            setTimeout(() => {
+                document.body.classList.remove('language-transition');
+            }, 400);
+        }
+
+        // تحميل إعدادات اللغة
+        function loadLanguageSetting() {
+            const savedLanguage = localStorage.getItem('notepad-language');
+            if (savedLanguage) {
+                currentLanguage = savedLanguage;
+                document.body.setAttribute('data-language', currentLanguage);
+            }
+        }
+
+        // تحديث واجهة المستخدم
+        function updateUI() {
+            const lang = translations[currentLanguage];
+            
+            // تحديث الأزرار
+            document.getElementById('fileMenu').textContent = lang.fileMenu;
+            document.getElementById('editMenu').textContent = lang.editMenu;
+            document.getElementById('formatMenu').textContent = lang.formatMenu;
+            document.getElementById('saveBtn').textContent = lang.saveBtn;
+            document.getElementById('openBtn').textContent = lang.openBtn;
+            document.getElementById('aboutBtn').textContent = lang.aboutBtn;
+            document.getElementById('languageBtn').textContent = lang.languageBtn;
+            document.getElementById('deleteBtn').textContent = lang.deleteBtn;
+            document.getElementById('clearBtn').textContent = lang.clearBtn;
+            
+            // تحديث القوائم
+            document.getElementById('newDocumentItem').textContent = lang.newDocument;
+            document.getElementById('openFileItem').textContent = lang.openFile;
+            document.getElementById('saveFileItem').textContent = lang.saveFile;
+            document.getElementById('saveAsTxtItem').textContent = lang.saveAsTxt;
+            document.getElementById('printDocumentItem').textContent = lang.printDocument;
+            
+            document.getElementById('undoItem').textContent = lang.undo;
+            document.getElementById('redoItem').textContent = lang.redo;
+            document.getElementById('cutItem').textContent = lang.cut;
+            document.getElementById('copyItem').textContent = lang.copy;
+            document.getElementById('pasteItem').textContent = lang.paste;
+            document.getElementById('selectAllItem').textContent = lang.selectAll;
+            
+            document.getElementById('boldItem').innerHTML = `<strong>B</strong> ${lang.bold}`;
+            document.getElementById('italicItem').innerHTML = `<em>I</em> ${lang.italic}`;
+            document.getElementById('underlineItem').innerHTML = `<u>U</u> ${lang.underline}`;
+            document.getElementById('fontSettingsItem').textContent = lang.fontSettings;
+            
+            // تحديث النوافذ
+            document.getElementById('aboutTitle').textContent = lang.aboutTitle;
+            document.getElementById('aboutVersion').textContent = lang.aboutVersion;
+            document.getElementById('aboutDev').textContent = lang.aboutDev;
+            document.getElementById('aboutFeatures').textContent = lang.aboutFeatures;
+            document.getElementById('closeAbout').textContent = lang.closeAbout;
+            
+            document.getElementById('fontSettingsTitle').textContent = lang.fontSettingsTitle;
+            document.getElementById('fontFamilyLabel').textContent = lang.fontFamilyLabel;
+            document.getElementById('fontSizeLabel').textContent = lang.fontSizeLabel;
+            document.getElementById('applyFontSettings').textContent = lang.applyFontSettings;
+            document.getElementById('cancelFontSettings').textContent = lang.cancelFontSettings;
+            
+            // تحديث شريط الحالة
+            document.getElementById('statusLabel').textContent = lang.statusLabel;
+            document.getElementById('charsLabel').textContent = lang.charsLabel;
+            document.getElementById('wordsLabel').textContent = lang.wordsLabel;
+            document.getElementById('linesLabel').textContent = lang.linesLabel;
+            document.getElementById('status').textContent = lang.statusReady;
+            
+            // تحديث علامات التبويب
+            document.getElementById('document1Tab').textContent = lang.document1Tab;
+            document.getElementById('newTab').textContent = lang.newTab;
+            
+            // تحديث العلم
+            document.getElementById('languageFlag').textContent = currentLanguage === 'ar' ? '🇸🇦' : '🇺🇸';
+        }
+
+        // باقي الدوال تبقى كما هي مع تعديل النصوص لتستخدم الترجمات
+        function setupDropdowns() {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            
+            dropdowns.forEach(dropdown => {
+                const button = dropdown.querySelector('.btn');
+                const content = dropdown.querySelector('.dropdown-content');
+                
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    if (activeDropdown && activeDropdown !== dropdown) {
+                        activeDropdown.classList.remove('active');
+                    }
+                    
+                    dropdown.classList.toggle('active');
+                    activeDropdown = dropdown.classList.contains('active') ? dropdown : null;
+                });
+                
+                content.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            });
+            
+            document.addEventListener('click', () => {
+                if (activeDropdown) {
+                    activeDropdown.classList.remove('active');
+                    activeDropdown = null;
+                }
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && activeDropdown) {
+                    activeDropdown.classList.remove('active');
+                    activeDropdown = null;
+                }
+            });
+        }
+
+        function setupEventListeners() {
+            notepad.addEventListener('input', function() {
+                isModified = true;
+                updateStats();
+                updateStatus(translations[currentLanguage].statusModified);
+                saveToHistory();
+            });
+
+            notepad.addEventListener('keydown', function(e) {
+                if (e.ctrlKey) {
+                    switch(e.key.toLowerCase()) {
+                        case 's':
+                            e.preventDefault();
+                            saveFile();
+                            break;
+                        case 'o':
+                            e.preventDefault();
+                            openFile();
+                            break;
+                        case 'n':
+                            e.preventDefault();
+                            newDocument();
+                            break;
+                        case 'a':
+                            e.preventDefault();
+                            selectAll();
+                            break;
+                        case 'z':
+                            e.preventDefault();
+                            undoAction();
+                            break;
+                        case 'y':
+                            e.preventDefault();
+                            redoAction();
+                            break;
+                        case 'b':
+                            e.preventDefault();
+                            formatText('bold');
+                            break;
+                        case 'i':
+                            e.preventDefault();
+                            formatText('italic');
+                            break;
+                        case 'u':
+                            e.preventDefault();
+                            formatText('underline');
+                            break;
+                    }
+                }
+            });
+            
+            setupDropdowns();
+        }
+
+        function saveToHistory() {
+            history.push(notepad.value);
+            historyIndex = history.length - 1;
+        }
+
+        function undoAction() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                notepad.value = history[historyIndex];
+                updateStats();
+                showNotification(translations[currentLanguage].undoDone);
+            }
+        }
+
+        function redoAction() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                notepad.value = history[historyIndex];
+                updateStats();
+                showNotification(translations[currentLanguage].redoDone);
+            }
+        }
+
+        function newDocument() {
+            if (isModified && notepad.value.trim() !== '') {
+                if (!confirm(translations[currentLanguage].confirmNew)) {
+                    return;
+                }
+            }
+            notepad.value = '';
+            currentFile = null;
+            isModified = false;
+            updateStats();
+            updateStatus(translations[currentLanguage].statusReady);
+            showNotification(translations[currentLanguage].newDocCreated);
+            saveToHistory();
+            closeAllDropdowns();
+        }
+
+        function openFile() {
+            fileInput.click();
+            closeAllDropdowns();
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    notepad.value = e.target.result;
+                    currentFile = file.name;
+                    isModified = false;
+                    updateStats();
+                    updateStatus(translations[currentLanguage].fileOpened + file.name);
+                    showNotification(translations[currentLanguage].fileOpened + file.name);
+                    saveToHistory();
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function saveFile() {
+            if (notepad.value.trim() === '') {
+                showNotification(translations[currentLanguage].noContent, 'warning');
+                return;
+            }
+
+            const blob = new Blob([notepad.value], { type: 'text/plain; charset=utf-8' });
+            const filename = currentFile || `note_${getTimestamp()}.txt`;
+            
+            saveAsFile(blob, filename);
+            isModified = false;
+            showNotification(translations[currentLanguage].fileSaved);
+            closeAllDropdowns();
+        }
+
+        function saveAsTxt() {
+            const blob = new Blob([notepad.value], { type: 'text/plain; charset=utf-8' });
+            saveAsFile(blob, `note_${getTimestamp()}.txt`);
+            closeAllDropdowns();
+        }
+
+        function saveAsFile(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = filename;
+            downloadLink.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function deleteSelectedText() {
+            const start = notepad.selectionStart;
+            const end = notepad.selectionEnd;
+            
+            if (start === end) {
+                showNotification(translations[currentLanguage].noTextSelected, 'warning');
+                return;
+            }
+            
+            notepad.setRangeText('', start, end, 'end');
+            showNotification(translations[currentLanguage].textDeleted);
+            saveToHistory();
+        }
+
+        function cutText() {
+            const start = notepad.selectionStart;
+            const end = notepad.selectionEnd;
+            const selectedText = notepad.value.substring(start, end);
+            
+            if (selectedText) {
+                navigator.clipboard.writeText(selectedText);
+                notepad.setRangeText('', start, end, 'end');
+                showNotification(translations[currentLanguage].textCut);
+                saveToHistory();
+            } else {
+                showNotification(translations[currentLanguage].noTextSelected, 'warning');
+            }
+            closeAllDropdowns();
+        }
+
+        function copyText() {
+            const start = notepad.selectionStart;
+            const end = notepad.selectionEnd;
+            const selectedText = notepad.value.substring(start, end);
+            
+            if (selectedText) {
+                navigator.clipboard.writeText(selectedText);
+                showNotification(translations[currentLanguage].textCopied);
+            } else {
+                showNotification(translations[currentLanguage].noTextSelected, 'warning');
+            }
+            closeAllDropdowns();
+        }
+
+        async function pasteText() {
+            try {
+                const text = await navigator.clipboard.readText();
+                const start = notepad.selectionStart;
+                notepad.setRangeText(text, start, start, 'end');
+                showNotification(translations[currentLanguage].textPasted);
+                saveToHistory();
+            } catch (err) {
+                showNotification('فشل في لصق النص', 'warning');
+            }
+            closeAllDropdowns();
+        }
+
+        function selectAll() {
+            notepad.select();
+            showNotification(translations[currentLanguage].allSelected);
+            closeAllDropdowns();
+        }
+
+        function clearText() {
+            if (notepad.value.trim() === '') {
+                showNotification(translations[currentLanguage].noTextToClear, 'warning');
+                return;
+            }
+
+            if (confirm(translations[currentLanguage].confirmClear)) {
+                notepad.value = '';
+                isModified = true;
+                updateStats();
+                showNotification(translations[currentLanguage].allCleared);
+                saveToHistory();
+            }
+        }
+
+        function formatText(type) {
+            const start = notepad.selectionStart;
+            const end = notepad.selectionEnd;
+            const selectedText = notepad.value.substring(start, end);
+            
+            if (!selectedText) {
+                showNotification(translations[currentLanguage].noTextSelected, 'warning');
+                return;
+            }
+            
+            let formattedText = selectedText;
+            let formatName = '';
+            
+            switch(type) {
+                case 'bold':
+                    formattedText = `**${selectedText}**`;
+                    formatName = currentLanguage === 'ar' ? 'عريض' : 'bold';
+                    break;
+                case 'italic':
+                    formattedText = `*${selectedText}*`;
+                    formatName = currentLanguage === 'ar' ? 'مائل' : 'italic';
+                    break;
+                case 'underline':
+                    formattedText = `__${selectedText}__`;
+                    formatName = currentLanguage === 'ar' ? 'تحته خط' : 'underline';
+                    break;
+            }
+            
+            notepad.setRangeText(formattedText, start, end, 'select');
+            showNotification(translations[currentLanguage].formatApplied + formatName);
+            saveToHistory();
+            closeAllDropdowns();
+        }
+
+        function changeFont() {
+            const font = document.getElementById('fontFamily').value;
+            notepad.style.fontFamily = font;
+        }
+
+        function changeFontSize() {
+            const size = document.getElementById('fontSize').value;
+            notepad.style.fontSize = size;
+        }
+
+        function applyFontSettings() {
+            const font = document.getElementById('modalFontFamily').value;
+            const size = document.getElementById('modalFontSize').value;
+            
+            notepad.style.fontFamily = font;
+            notepad.style.fontSize = size;
+            
+            document.getElementById('fontFamily').value = font;
+            document.getElementById('fontSize').value = size;
+            
+            closeModal('fontSettingsModal');
+            showNotification(translations[currentLanguage].fontSettingsApplied);
+        }
+
+        function updateStats() {
+            const text = notepad.value;
+            const charCount = text.length;
+            const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const lineCount = text ? text.split('\n').length : 1;
+
+            document.getElementById('charCount').textContent = charCount;
+            document.getElementById('wordCount').textContent = wordCount;
+            document.getElementById('lineCount').textContent = lineCount;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('notepad-content');
+            if (saved) {
+                notepad.value = saved;
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('notepad-content', notepad.value);
+        }
+
+        function printDocument() {
+            const content = notepad.value;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html dir="${currentLanguage === 'ar' ? 'rtl' : 'ltr'}">
+                    <head>
+                        <title>${currentLanguage === 'ar' ? 'طباعة المستند' : 'Print Document'}</title>
+                        <style>
+                            body { 
+                                font-family: ${notepad.style.fontFamily || 'Tahoma, Arial, sans-serif'}; 
+                                font-size: ${notepad.style.fontSize || '16px'};
+                                padding: 40px;
+                                direction: ${currentLanguage === 'ar' ? 'rtl' : 'ltr'};
+                                text-align: ${currentLanguage === 'ar' ? 'right' : 'left'};
+                            }
+                            pre { 
+                                white-space: pre-wrap; 
+                                word-wrap: break-word;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <pre>${content}</pre>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+            closeAllDropdowns();
+        }
+
+        function getTimestamp() {
+            const now = new Date();
+            return now.toISOString().slice(0,19).replace(/:/g,'-');
+        }
+
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.style.display = 'block';
+            notification.style.background = type === 'success' ? '#27ae60' : 
+                                          type === 'warning' ? '#f39c12' : '#3498db';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+            closeAllDropdowns();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('.dropdown').forEach(dropdown => {
+                dropdown.classList.remove('active');
+            });
+            activeDropdown = null;
+        }
+
+        // الحفظ التلقائي
+        setInterval(() => {
+            if (isModified) {
+                saveToStorage();
+            }
+        }, 5000);
+
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
